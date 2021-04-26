@@ -1,0 +1,121 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stelace-api
+spec:
+  selector:
+    matchLabels:
+      app: stelace-api
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: stelace-api
+    spec:
+      containers:
+        - name: stelace-api
+          # image: justinschuldt/market-api:db-seed
+          image: justinschuldt/market-api:plugin-debug-2
+          ports:
+            - name: http
+              containerPort: 4100
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: INSTANCE_ENV
+              value: test,live
+            - name: INSTANCE_ID
+              value: GKE-k8s
+            - name: INSTALLED_PLUGINS
+              value: https://github.com/stelace/stelace-search-filter-dsl-parser.git#0.3.0,https://github.com/stelace/stelace-stripe.git#0.1.0
+            - name: SECURE_ENV
+              value: "false"  # use aws-param-store secrets
+            - name: AWS_REGION
+              value: us-east
+            - name: SERVER_PORT
+              value: "4100"
+            - name: REMOTE_STORE
+              value: "false"
+            - name: ROARR_LOG
+              value: "true"
+            - name: CORE_LOGGING
+              value: "true"  # set to true to enable Cote mesh objects debugging
+            - name: DEBUG
+              value: stelace:api,stelace:integrations:stripe
+            - name: STELACE_API_URL
+              value: https://api.syr.market
+            - name: STELACE_INSTANT_WEBSITE_URL
+              value: https://syr.market
+            - name: SYSTEM_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stelace-api-secret
+                  key: system-key
+            - name: STRIPE_SECRET_API_KEY
+              valueFrom: 
+                secretKeyRef:
+                  name: stripe-api-secret
+                  key: secret-key
+            # elastic-apm
+            - name: ELASTIC_APM_DISABLED
+              value: "true"
+            # - name: ELASTIC_APM_SERVER_URL
+            #   value: http://apm-server:8200
+            # - name: ELASTIC_APM_SECRET_TOKEN
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: elastic-apm-secret
+            #       key: token
+            # postgres
+            - name: POSTGRES_HOST
+              value: postgres
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_ADMIN_USER  # not needed, but just in case
+              value: mainuser
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: db_name
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: password
+            # redis
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_TLS
+              value: "false"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_DBNUM
+              value: "0"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: password
+            # elasticsearch
+            - name: ELASTIC_SEARCH_HOST
+              value: elasticsearch
+            - name: ELASTIC_SEARCH_PORT
+              value: "9200"
+            - name: ELASTIC_SEARCH_USER
+              value: elastic
+            - name: ELASTIC_SEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-secret
+                  key: password
+            - name: ELASTIC_SEARCH_PROTOCOL
+              value: http
+---

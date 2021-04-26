@@ -1,0 +1,53 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  selector:
+    matchLabels:
+      app: redis  # has to match .spec.template.metadata.labels
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: redis  # has to match .spec.selector.matchLabels
+    spec:
+      initContainers:
+        - name: disable-thp
+          image: redis:5.0.1-alpine
+          volumeMounts:
+            - name: host-sys
+              mountPath: /host-sys
+          command: ["sh", "-c", "echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
+      containers:
+        - name: redis
+          image: redis:5.0.1-alpine          # for x86
+          # image: arm32v7/redis:5.0.10-alpine   # for armhf
+          imagePullPolicy: Always
+          args: ["--requirepass", "$(REDIS_PASS)", "--appendonly", "yes"] #  "--save", "900", "1", "--save", "30", "1"]
+          ports:
+            - containerPort: 6379
+              name: redis
+          env:
+            - name: REDIS_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: password
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: host-sys
+          hostPath:
+            path: /sys
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: syr-redis-ssd-claim
+---
