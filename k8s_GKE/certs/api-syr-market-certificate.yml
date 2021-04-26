@@ -1,0 +1,7 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: api-syr-market-certificate
+spec:
+  domains:
+    - api.syr.market

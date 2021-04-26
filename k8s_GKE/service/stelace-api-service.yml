@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stelace-api
+  labels:
+    app: stelace-api
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 4100
+      targetPort: http
+  selector:
+    app: stelace-api
+  type: ClusterIP
+---
